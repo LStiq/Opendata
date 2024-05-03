@@ -1,7 +1,8 @@
 # Traitement des horaires de tramway de Bordeaux via API
 
 ## Description du projet
-Ce projet est conçu pour interagir avec l'API GeoJSON de l'atelier OPENDATA de Bordeaux Métropole afin de récupérer et traiter les données des différentes lignes de tramway, incluant les arrêts, les itinéraires, les tronçons et les horaires. Il identifie les arrêts de tram les plus proches d'une position GPS donnée, recueille les premiers horaires de passage estimés pour chaque arrêt, et traite les informations des itinéraires et tronçons de tramway pour une analyse ou une visualisation ultérieure.
+Ce projet est conçu pour interagir avec l'API GeoJSON de l'atelier OPENDATA de Bordeaux Métropole afin de récupérer et traiter les données des différentes lignes de tramway, incluant les arrêts, les itinéraires, les tronçons et les horaires. Il identifie les arrêts de tram les plus proches d'une position GPS donnée, recueille les premiers horaires de passage estimés pour chaque arrêt, et traite les informations des itinéraires et tronçons de tramway pour une analyse ou une visualisation ultérieure. <span style="color:#FFFF00">**À titre d'exemple, ce projet indique le trajet pour aller uniquement jusqu'à l'aéroport de Mérignanc, des améliorations sont possibles. Comme par exemple à partir d'un marqueur afficher l'itinéraire en prenant en compte l'arrêt le plus proche de ce marqueur**.</span>
+
 
 ## Définition de l'Open data et Histoire
 
@@ -13,23 +14,19 @@ Ce concept englobe une multitude de secteurs, allant de la géolocalisation à l
 
 L'accès aux données constitue un enjeu crucial pour le fonctionnement démocratique d'une société. En France, depuis 1978, la loi CADA autorise le public à accéder aux informations détenues par l'administration.
 
-Le concept de données ouvertes a émergé à la fin des années 90, avec l'expression "open data" apparaissant pour la première fois en 1995 dans une publication scientifique du National Research Council américain. Cette notion s'inscrit dans une réflexion sur la nature des données en tant que bien commun et sur les risques de privatisation des connaissances.
+Le concept de données ouvertes a émergé à la fin des années 90, avec l'expression "open data" apparaissant pour la première fois en 1995 dans une publication 
 
-Il faudra attendre 2005 pour qu'un cadre juridique du soit établi avec l'adoption de l'Open Definition, étendant les principes de l'Open Source aux connaissances. Ces principes reposent sur l'accessibilité, la redistribution et la réutilisation des données par tous, sans discrimination.
+Il faudra attendre 2005 pour qu'un cadre juridique du soit établi avec l'adoption de l'Open Definition, étendant les principes de l'Open Source aux connaissances. Ces principes reposent sur l'accessibilité, la redistribution et la réutilisation des données par tous.
 
 La formalisation des principes de l'Open Data intervient deux ans plus tard lors de la rencontre de Sebastopol, définissant huit critères pour qualifier une donnée comme ouverte. Aux États-Unis, ces principes sont adoptés par le gouvernement en 2009 dans le cadre de l'Open Government.
 
-En 2010, la France lance le portail national d'accès aux informations, data.gouv.fr, permettant aux citoyens d'accéder aux ressources de l'administration. La mission Etalab en assure la maintenance depuis sa création en décembre 2011.
-
-En 2013, la charte internationale sur l'Open Data, issue du G8, confère une dimension politique à l'ouverture des données, s'inscrivant dans la continuité des initiatives précédentes.
-
-Aujourd'hui, de nombreux gouvernements à travers le monde reprennent les principes des données ouvertes, la France étant reconnue comme l'un des leaders mondiaux en matière d'ouverture des données publiques.
-
+En 2010, la France lance data.gouv.fr, permettant aux citoyens d'accéder aux ressources de l'administration. La mission Etalab en assure la maintenance depuis sa création en décembre 2011.
 
 ## Fonctionnalités du projet
 - **Identification de l'arrêt le plus proche** : Détermine l'arrêt de tram le plus proche d'une position GPS donnée.
 - **Traitement des horaires** : Récupère le premier horaire estimé pour les arrêts de tram.
 - **Analyse des itinéraires et tronçons** : Collecte et traite les données des itinéraires et tronçons de tramway pour identifier les connexions et parcours pertinents.
+- **Affichage de l'itinéraire sur une carte** : Affiche l'itinéraire sur une carte avec des couleurs en fonction du Tram. Nous avons les informations des lignes ainsi que des arrêts en cliquant sur les lignes ou les marqueurs.
 
 ## Sources de données
 Le script utilise plusieurs points de terminaison GeoJSON fournis par Bordeaux Métropole pour collecter les données :
@@ -53,9 +50,10 @@ pip install -r requirements.txt
 ```
 
 ## Utilisation
-1. **Configurer les coordonnées GPS** : Définissez les variables `gplat` et `gplng` avec votre position GPS actuelle. Une amélioration possible, est de récupérer depuis une carte, les coordonnées d'un marqueur.
+1. **Configurer les coordonnées GPS** : Définissez les variables `gplat` et `gplng` avec votre position GPS actuelle. Une amélioration possible, est de récupérer les coordonnées de la machine sur laquelle on exécute le script.
 
-2. **Exécuter le script** : Exécutez le script pour traiter et afficher les données des tramways.
+2. **Exécuter le script** : Une fois le script récupérer, vous avez juste à l'exécuter pour traiter et afficher les données des tramways.
+
    ```bash
    python Projet.py
    ```
@@ -94,15 +92,152 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     return c * r
 ```
 
+- `callback_label(label)`: Permet d'afficher un label à la carte à savoir : la ligne du Tram, l'arrêt de départ, l'arrêt de changement ou l'arrêt d'arrivée.
+
+```
+def callback_label(label):
+    label['text'] = label.data
+```  
+
+- Dans le code ci-dessous, nous choisissons un lieu d'arrivée en fonction du groupe, il suffit de modifier "T_AEROP" par un autre groupe et on va récupérer les identifiants d'arrivée.
+```
+for feature in response_arrets["features"]:
+    if feature['properties']['groupe'] == "T_AEROP":
+        stop_id = feature['properties']['gid']
+        stop_ids.append(stop_id)
+        stop = feature
+```
+
 ## Exemples de sorties
 - Liste des arrêts de tram les plus proches avec l'horaire de passage en minutes "Dans X minutes" de l'arrêt de tram le plus proche.
+
 - Détails des itinéraires de tram partant de l'arrêt le plus proche.
 
-![Exemple de sortie en brut](image.png)
+![Exemple de sortie en brut](documentation_images/Exemple%20sortie.png "Sortie brut")
 
 
-## Fichiers
-- `Projet.py`: Script principal contenant toute la logique de traitement.
+- Pour un chemin prédéfini, nous allons avoir les chemins avec une couleur adapté à la ligne de tram ainsi que 2 ou 3 marqueurs correspondant aux arrêts de départ, intermédiaire (si changement d'arrêt) et d'arrivée.
+
+
+![Exemple de sortie en image](documentation_images/Exemple%20carte.png "Carte")
+
+
+## Fichier
+- `Projet.py`: Script principal contenant toute la logique de traitement avec les commentaires associées à chaque traitement.
+
+
+## Explication du code permettant d'afficher sur la carte le chemin
+
+### Recherche des arrêts communs / correspondances
+Ici nous allons boucler une première fois sur les chemins triés par ordre croissant sur l'identifiant pour lister toutes les correspondances.
+```
+# Collecte des arrêts de départ et d'arrivée pour chaque tronçon
+for chemin_info in chemins_info_sorted_gid:
+    troncon_found = False
+    troncon_mene_au_changement = False
+    troncon_part_de_changement = False
+
+    # On parcourt tous les tronçons et on vérifie si un des tronçons fait partie de ceux les plus proches    
+    for troncon_gid in chemin_info['troncon']:
+        if troncon_gid in closest_stop_troncons:
+            troncon_found = True
+    
+    # Si troncon_found alors on l'ajoute à notre liste d'arrêt de départ
+        if troncon_found:
+            troncon_info = troncon_dict.get(troncon_gid, {"depart": "Départ inconnu", "arrivee": "Arrivée inconnue"})
+            arret_tram_depart.add(troncon_info['depart'])
+    
+    # Si le tronçon est dans la liste du tronçon d'arrivée, on arrête
+        if troncon_gid in arrivee_stop_troncons:
+            break
+    
+    # Vérifier si le chemin contient le tronçon d'arrivée avant de commencer à afficher quoi que ce soit
+    if any(troncon_gid in arrivee_stop_troncons for troncon_gid in chemin_info['troncon']):
+        for troncon_gid in chemin_info['troncon']:
+            troncon_info = troncon_dict.get(troncon_gid, {"depart": "Départ inconnu", "arrivee": "Arrivée inconnue"})
+            arret_tram_arrivee.add(troncon_info['depart'])
+            
+# On repère les correspondances
+arrets_communs = arret_tram_depart.intersection(arret_tram_arrivee)
+arret_changement = next(iter(arrets_communs), None) 
+```
+
+### Recherche des chemins valides
+Ici nous allons boucler une seconde fois sur les chemins triés pour lister ici les chemins permettant d'arriver soit à destination ou alors à une correpondance permettant d'arriver à destination.
+```
+chemins_valides = []
+
+for chemin_info in chemins_info_sorted_gid:
+    troncon_mene_au_changement = False
+    troncon_part_de_changement = False
+    troncon_found = False
+
+    for troncon_gid in chemin_info['troncon']:
+        if troncon_gid in closest_stop_troncons:
+            troncon_found = True
+        
+        # On vérifie si le tronçon mène à l'arrêt de changement puis s'il part de l'arrêt de changement
+        if troncon_found:
+            troncon_info = troncon_dict.get(troncon_gid, {"depart": "Départ inconnu", "arrivee": "Arrivée inconnue"})
+            if troncon_info['arrivee'] == arret_changement:
+                troncon_mene_au_changement = True
+            if troncon_info['depart'] == arret_changement:
+                troncon_part_de_changement = True
+
+    # Si une des 2 conditions validés, on ajoute ce chemin comme validé à la liste
+    if troncon_mene_au_changement or troncon_part_de_changement:
+        chemins_valides.append(chemin_info)
+```
+
+Enfin on va boucler une 3ème fois cette fois-ci sur les chemins valides que nous avons trouvé précédemment.  
+L'objectif ici est d'afficher en sortie textuelle l'itinéraire complet du trajet d'un point A à un point B. Et d'un autre côté ajouter les lignes du chemin sur une carte.
+Pour cela nous allons mettre des flags pour afficher ou non certaines informations sur la sortie textuelle et la carte, `first_iteration` et `stop_printing` permettent ceci.
+```
+# On parcourt la liste des chemins valides
+for chemin_info in chemins_valides:
+    troncon_found = False
+    first_iteration = True # Nécessaire pour afficher l'horaire de départ d'un seul tram
+
+    for troncon_gid in chemin_info['troncon']:
+        if troncon_gid in closest_stop_troncons:
+            troncon_found = True
+            print(f"{chemin_info['chemin_libelle']}: Ligne {chemin_info['ligne_libelle']}") # Affichage du libellé du chemin et de la ligne correspondante
+        if troncon_found:
+            troncon_info = troncon_dict.get(troncon_gid, {"depart": "Départ inconnu", "arrivee": "Arrivée inconnue"})
+            # Print troncon sur la map
+            map_widget.set_path(troncon_info['geoshape'], color=colors[chemin_info['ligne_libelle'][0]], data=chemin_info['ligne_libelle'][0], command=callback_label)
+            if first_iteration:
+                current_time = datetime.now()
+                horaire = datetime.fromisoformat(troncon_info['horaire']).replace(tzinfo=None)
+                time_diff = round((horaire - current_time).total_seconds() // 60) # Permet de récupérer le temps en minutes dans lequel le tram va partir
+                map_widget.set_marker(troncon_info['geoshape'][0][0], troncon_info['geoshape'][0][1], data=troncon_info['depart'], command=callback_label)
+                print(f"\033[1m Dans {time_diff} minutes, Départ {troncon_info['depart']} -> Arrivée {troncon_info['arrivee']} \033[0m")
+                first_iteration = False # On passe à false pour ne plus afficher le temps dans lequel part les autres tram, uniquement celui le plus proche de nous nous intéresse
+            else:
+                # Affichage de l'itinéraire jusqu'au changement d'arrêt
+                print(f"Départ {troncon_info['depart']} -> Arrivée {troncon_info['arrivee']}")
+
+
+            if arret_changement == troncon_info['arrivee']:
+                for chemin_info in [chemin_info for chemin_info in chemins_info_sorted_gid if any(troncon_gid in arrivee_stop_troncons for troncon_gid in chemin_info['troncon'])][:1]:
+                    start_printing = False # Flag pour savoir si on doit afficher ou non le trajet
+                    for troncon_gid in chemin_info['troncon']:
+                        troncon_info = troncon_dict.get(troncon_gid, {"depart": "Départ inconnu", "arrivee": "Arrivée inconnue"})
+                        # Commencer à afficher à partir de l'arrêt de changement
+                        if troncon_info['depart'] == arret_changement or start_printing:
+                            if not start_printing:
+                                print(f"\033[1m Changement d'arrêt : {arret_changement}, Ligne {chemin_info['ligne_libelle']} \033[0m")
+                                map_widget.set_marker(troncon_info['geoshape'][0][0], troncon_info['geoshape'][0][1],data=arret_changement, command=callback_label)
+                            start_printing = True
+                            map_widget.set_path(troncon_info['geoshape'], color=colors[chemin_info['ligne_libelle'][0]], data=chemin_info['ligne_libelle'][0], command=callback_label)
+                            print(f"Départ {troncon_info['depart']} -> Arrivée {troncon_info['arrivee']}")
+                        if troncon_gid in arrivee_stop_troncons and start_printing:
+                            map_widget.set_marker(troncon_info['geoshape'][-1][0], troncon_info['geoshape'][-1][1], data=troncon_info['arrivee'], command=callback_label)
+                            break
+        if troncon_gid in arrivee_stop_troncons:
+            break
+```
+
 
 ## Avertissement
 Ce script est à des fins éducatives uniquement. Les applications en temps réel peuvent nécessiter de gérer les mises à jour et les modifications fournies par le fournisseur d'API.

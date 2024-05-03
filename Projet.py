@@ -27,12 +27,8 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     
     return c * r
 
-
-def ligne_tram(ligne):
-    label['text'] = ligne.data
-
-def arret_tram(arret):
-    label['text'] = arret.data
+def callback_label(label):
+    label['text'] = label.data
 
 # Position actuelle
 gplat = 44.866072
@@ -94,9 +90,10 @@ for feature in response_arrets["features"]:
             arret_libelle = feature['properties']['libelle']
             arrets_dict[arret_gid] = arret_libelle
             stop_coords = feature['geometry']['coordinates']
-            stop_lat = stop_coords[1]
-            stop_lon = stop_coords[0]
-    
+            # Inversion latitude, longitude
+            stop_lat, stop_lon = stop_coords[1], stop_coords[0]
+
+            # Calcul de distance pour trouver les arrêts les plus proches de notre position
             distance = haversine_distance(gplat, gplng, stop_lat, stop_lon)
             if distance < min_distance:
                 min_distance = distance
@@ -105,7 +102,7 @@ for feature in response_arrets["features"]:
 arrivee_stop_troncons = []
 closest_stop_troncons = []
 
-# Traitement des horaires de tram non réalisés
+# Traitement des horaires de tram non réalisés (pour avoir les prochains)
 for feature in response_horaires["features"]:
     if feature['properties']['source'] == "SAEIV_TRAM" and feature['properties']['etat'] == "NON_REALISE":
         horaire_estime = feature['properties']['hor_estime']
@@ -134,7 +131,7 @@ for feature in response_troncon["features"]:
         # On récupère le tronçon de départ et on l'ajoute à la liste
         closest_stop_troncons.append(troncon_gid)
 
-# On récupère les données de tous les tronçons
+# On récupère les données de tous les tronçons ainsi que les coordonnées pour l'affichage
     if feature['properties']['vehicule'] == "TRAM":
         troncon_gid = feature['properties']['gid']
         depart_gid = feature['properties']['rg_sv_arret_p_nd']
@@ -192,7 +189,7 @@ chemins_info_sorted_gid = sorted(chemins_info, key=lambda x: x['chemin_gid'])
 # Détermination des arrêts de changement et affichage des chemins correspondants
 arret_tram_depart, arret_tram_arrivee = set(), set()
 
-# Collecte des arrêts de départ et d'arrivée pour chaque tronçon pertinent
+# Collecte des arrêts de départ et d'arrivée pour chaque tronçon
 for chemin_info in chemins_info_sorted_gid:
     troncon_found = False
     troncon_mene_au_changement = False
@@ -221,7 +218,6 @@ for chemin_info in chemins_info_sorted_gid:
 # On repère les correspondances
 arrets_communs = arret_tram_depart.intersection(arret_tram_arrivee)
 arret_changement = next(iter(arrets_communs), None) 
-
 
 chemins_valides = []
 
@@ -269,12 +265,12 @@ for chemin_info in chemins_valides:
         if troncon_found:
             troncon_info = troncon_dict.get(troncon_gid, {"depart": "Départ inconnu", "arrivee": "Arrivée inconnue"})
             # Print troncon sur la map
-            map_widget.set_path(troncon_info['geoshape'], color=colors[chemin_info['ligne_libelle'][0]], data=chemin_info['ligne_libelle'][0], command=ligne_tram)
+            map_widget.set_path(troncon_info['geoshape'], color=colors[chemin_info['ligne_libelle'][0]], data=chemin_info['ligne_libelle'][0], command=callback_label)
             if first_iteration:
                 current_time = datetime.now()
                 horaire = datetime.fromisoformat(troncon_info['horaire']).replace(tzinfo=None)
                 time_diff = round((horaire - current_time).total_seconds() // 60) # Permet de récupérer le temps en minutes dans lequel le tram va partir
-                map_widget.set_marker(troncon_info['geoshape'][0][0], troncon_info['geoshape'][0][1], data=troncon_info['depart'], command=arret_tram)
+                map_widget.set_marker(troncon_info['geoshape'][0][0], troncon_info['geoshape'][0][1], data=troncon_info['depart'], command=callback_label)
                 print(f"\033[1m Dans {time_diff} minutes, Départ {troncon_info['depart']} -> Arrivée {troncon_info['arrivee']} \033[0m")
                 first_iteration = False # On passe à false pour ne plus afficher le temps dans lequel part les autres tram, uniquement celui le plus proche de nous nous intéresse
             else:
@@ -291,12 +287,12 @@ for chemin_info in chemins_valides:
                         if troncon_info['depart'] == arret_changement or start_printing:
                             if not start_printing:
                                 print(f"\033[1m Changement d'arrêt : {arret_changement}, Ligne {chemin_info['ligne_libelle']} \033[0m")
-                                map_widget.set_marker(troncon_info['geoshape'][0][0], troncon_info['geoshape'][0][1],data=arret_changement, command=arret_tram)
+                                map_widget.set_marker(troncon_info['geoshape'][0][0], troncon_info['geoshape'][0][1],data=arret_changement, command=callback_label)
                             start_printing = True
-                            map_widget.set_path(troncon_info['geoshape'], color=colors[chemin_info['ligne_libelle'][0]], data=chemin_info['ligne_libelle'][0], command=ligne_tram)
+                            map_widget.set_path(troncon_info['geoshape'], color=colors[chemin_info['ligne_libelle'][0]], data=chemin_info['ligne_libelle'][0], command=callback_label)
                             print(f"Départ {troncon_info['depart']} -> Arrivée {troncon_info['arrivee']}")
                         if troncon_gid in arrivee_stop_troncons and start_printing:
-                            map_widget.set_marker(troncon_info['geoshape'][-1][0], troncon_info['geoshape'][-1][1], data=troncon_info['arrivee'], command=arret_tram)
+                            map_widget.set_marker(troncon_info['geoshape'][-1][0], troncon_info['geoshape'][-1][1], data=troncon_info['arrivee'], command=callback_label)
                             break
         if troncon_gid in arrivee_stop_troncons:
             break
