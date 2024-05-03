@@ -1,7 +1,7 @@
 # Traitement des horaires de tramway de Bordeaux via API
 
 ## Description du projet
-Ce projet est conçu pour interagir avec l'API GeoJSON de l'atelier OPENDATA de Bordeaux Métropole afin de récupérer et traiter les données des différentes lignes de tramway, incluant les arrêts, les itinéraires, les tronçons et les horaires. Il identifie les arrêts de tram les plus proches d'une position GPS donnée, recueille les premiers horaires de passage estimés pour chaque arrêt, et traite les informations des itinéraires et tronçons de tramway pour une analyse ou une visualisation ultérieure. <span style="color:#FFFF00">**À titre d'exemple, ce projet indique le trajet pour aller uniquement jusqu'à l'aéroport de Mérignanc, des améliorations sont possibles. Comme par exemple à partir d'un marqueur afficher l'itinéraire en prenant en compte l'arrêt le plus proche de ce marqueur**.</span>
+Ce projet est conçu pour interagir avec l'API GeoJSON de l'atelier OPENDATA de Bordeaux Métropole afin de récupérer et traiter les données des différentes lignes de tramway, incluant les arrêts, les itinéraires, les tronçons et les horaires. Il identifie les arrêts de tram les plus proches d'une position GPS donnée, recueille les premiers horaires de passage estimés pour chaque arrêt, et traite les informations des itinéraires et tronçons de tramway pour une analyse ou une visualisation ultérieure. <span style="color:#FFFF00">**À titre d'exemple, ce projet indique le trajet pour aller uniquement jusqu'à l'aéroport de Mérignanc, des [améliorations](#améliorations-possibles) sont possibles, elles sont référées à la toute fin du document. Comme par exemple à partir d'un marqueur afficher l'itinéraire en prenant en compte l'arrêt le plus proche de ce marqueur**.</span>
 
 
 ## Définition de l'Open data et Histoire
@@ -21,6 +21,10 @@ Il faudra attendre 2005 pour qu'un cadre juridique du soit établi avec l'adopti
 La formalisation des principes de l'Open Data intervient deux ans plus tard lors de la rencontre de Sebastopol, définissant huit critères pour qualifier une donnée comme ouverte. Aux États-Unis, ces principes sont adoptés par le gouvernement en 2009 dans le cadre de l'Open Government.
 
 En 2010, la France lance data.gouv.fr, permettant aux citoyens d'accéder aux ressources de l'administration. La mission Etalab en assure la maintenance depuis sa création en décembre 2011.
+
+## Schéma du projet 
+
+![Schéma projet](documentation_images/schema.png)
 
 ## Fonctionnalités du projet
 - **Identification de l'arrêt le plus proche** : Détermine l'arrêt de tram le plus proche d'une position GPS donnée.
@@ -50,7 +54,7 @@ pip install -r requirements.txt
 ```
 
 ## Utilisation
-1. **Configurer les coordonnées GPS** : Définissez les variables `gplat` et `gplng` avec votre position GPS actuelle. Une amélioration possible, est de récupérer les coordonnées de la machine sur laquelle on exécute le script.
+1. **Configurer les coordonnées GPS** : Définissez les variables `gplat` et `gplng` avec votre position GPS actuelle.
 
 2. **Exécuter le script** : Une fois le script récupérer, vous avez juste à l'exécuter pour traiter et afficher les données des tramways.
 
@@ -130,7 +134,7 @@ for feature in response_arrets["features"]:
 
 ### Recherche des arrêts communs / correspondances
 Ici nous allons boucler une première fois sur les chemins triés par ordre croissant sur l'identifiant pour lister toutes les correspondances.
-```
+```python
 # Collecte des arrêts de départ et d'arrivée pour chaque tronçon
 for chemin_info in chemins_info_sorted_gid:
     troncon_found = False
@@ -164,7 +168,7 @@ arret_changement = next(iter(arrets_communs), None)
 
 ### Recherche des chemins valides
 Ici nous allons boucler une seconde fois sur les chemins triés pour lister ici les chemins permettant d'arriver soit à destination ou alors à une correpondance permettant d'arriver à destination.
-```
+```python
 chemins_valides = []
 
 for chemin_info in chemins_info_sorted_gid:
@@ -192,7 +196,7 @@ for chemin_info in chemins_info_sorted_gid:
 Enfin on va boucler une 3ème fois cette fois-ci sur les chemins valides que nous avons trouvé précédemment.  
 L'objectif ici est d'afficher en sortie textuelle l'itinéraire complet du trajet d'un point A à un point B. Et d'un autre côté ajouter les lignes du chemin sur une carte.
 Pour cela nous allons mettre des flags pour afficher ou non certaines informations sur la sortie textuelle et la carte, `first_iteration` et `stop_printing` permettent ceci.
-```
+```python
 # On parcourt la liste des chemins valides
 for chemin_info in chemins_valides:
     troncon_found = False
@@ -241,6 +245,15 @@ for chemin_info in chemins_valides:
 
 ## Avertissement
 Ce script est à des fins éducatives uniquement. Les applications en temps réel peuvent nécessiter de gérer les mises à jour et les modifications fournies par le fournisseur d'API.
+
+
+## Améliorations possibles
+
+- Définition des coordonnées GPS de départ : Nous pouvons récupérer les coordonnées de la machine sur laquelle le script est exécuté.
+
+- Itinéraire non brut : En plaçant un marqueur sur une carte, récupérer les coordonnées de ce dernier puis calculer la distance afin de trouver l'arrêt le plus proche puis tracer l'itinéraire jusqu'à cet arrêt.
+
+- Estimation de la distance : À partir de l'arrêt de départ, calculer la distance en parcourant le chemin jusqu'à l'arrivée et l'afficher en tant que label sur la carte.
 
 ## Utilisation des données
 Les données utilisées par ce script sont fournies par Bordeaux Métropole via son API GeoJSON. L'utilisation de ces données est soumise aux termes et conditions de Bordeaux Métropole. Les utilisateurs du script doivent également se conformer à ces termes et vérifier les conditions d'utilisation sur le [site officiel](https://opendata.bordeaux-metropole.fr/pages/accueil/) avant d'utiliser les données.

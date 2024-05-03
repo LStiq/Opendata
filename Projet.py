@@ -42,8 +42,6 @@ troncon_transports_path = "https://data.bordeaux-metropole.fr/geojson?key=5MCBG7
 horaires_arrets_path = "https://data.bordeaux-metropole.fr/geojson?key=5MCBG792IH&typename=sv_horai_a"
 relation_troncon_chemin_path = "https://data.bordeaux-metropole.fr/geojson/relations/SV_TRONC_L/SV_CHEM_L?key=5MCBG792IH"
 
-
-
 response_arrets = get_geojson(arrets_transports_path)
 response_chemins = get_geojson(chemins_transports_path)
 response_lignes = get_geojson(lignes_transports_path)
