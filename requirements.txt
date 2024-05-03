@@ -1,0 +1,3 @@
+tk==0.1.0
+tkintermapview==1.29
+requests==2.31.0
