@@ -127,7 +127,7 @@ for feature in response_arrets["features"]:
 
 
 ## Fichier
-- `Projet.py`: Script principal contenant toute la logique de traitement avec les commentaires associées à chaque traitement.
+- `main.py`: Script principal contenant toute la logique de traitement avec les commentaires associées à chaque traitement.
 
 
 ## Explication du code permettant d'afficher sur la carte le chemin
