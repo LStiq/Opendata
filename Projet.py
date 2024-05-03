@@ -1,6 +1,7 @@
 from datetime import datetime
 import tkinter, tkintermapview, math, requests
 
+
 def get_geojson(url):
     response = requests.get(url)
     if response.status_code == 200: #On récupère la réponse get
@@ -26,6 +27,12 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     
     return c * r
 
+
+def ligne_tram(ligne):
+    label['text'] = ligne.data
+
+def arret_tram(arret):
+    label['text'] = arret.data
 
 # Position actuelle
 gplat = 44.866072
@@ -135,7 +142,7 @@ for feature in response_troncon["features"]:
         ligne_arret_libelle_depart = arrets_dict.get(depart_gid, "Arrêt inconnu")
         ligne_arret_libelle_arrivee = arrets_dict.get(arrivee_gid, "Arrêt inconnu")
         horaire_arret = horaires_arrets_dict.get(depart_gid)
-        troncon_geoshape = feature['geometry']
+        troncon_geoshape = [(point[1], point[0]) for point in feature['geometry']['coordinates']]
 
         troncon_dict[troncon_gid] = {
             "depart": ligne_arret_libelle_depart,
@@ -240,6 +247,16 @@ for chemin_info in chemins_info_sorted_gid:
         chemins_valides.append(chemin_info)
 
 
+root_tk = tkinter.Tk()
+root_tk.geometry(f"{1000}x{1000}")
+map_widget = tkintermapview.TkinterMapView(root_tk, width=900, height=900, corner_radius=5);
+map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
+label = tkinter.Label(root_tk)
+label.place(x=700, y=10)
+
+colors = {'Tram A': 'red', 'Tram B': 'blue', 'Tram C': 'green', 'Tram D': 'purple'}
+
+
 # On parcourt la liste des chemins valides
 for chemin_info in chemins_valides:
     troncon_found = False
@@ -251,10 +268,13 @@ for chemin_info in chemins_valides:
             print(f"{chemin_info['chemin_libelle']}: Ligne {chemin_info['ligne_libelle']}") # Affichage du libellé du chemin et de la ligne correspondante
         if troncon_found:
             troncon_info = troncon_dict.get(troncon_gid, {"depart": "Départ inconnu", "arrivee": "Arrivée inconnue"})
+            # Print troncon sur la map
+            map_widget.set_path(troncon_info['geoshape'], color=colors[chemin_info['ligne_libelle'][0]], data=chemin_info['ligne_libelle'][0], command=ligne_tram)
             if first_iteration:
                 current_time = datetime.now()
                 horaire = datetime.fromisoformat(troncon_info['horaire']).replace(tzinfo=None)
                 time_diff = round((horaire - current_time).total_seconds() // 60) # Permet de récupérer le temps en minutes dans lequel le tram va partir
+                map_widget.set_marker(troncon_info['geoshape'][0][0], troncon_info['geoshape'][0][1], data=troncon_info['depart'], command=arret_tram)
                 print(f"\033[1m Dans {time_diff} minutes, Départ {troncon_info['depart']} -> Arrivée {troncon_info['arrivee']} \033[0m")
                 first_iteration = False # On passe à false pour ne plus afficher le temps dans lequel part les autres tram, uniquement celui le plus proche de nous nous intéresse
             else:
@@ -271,18 +291,16 @@ for chemin_info in chemins_valides:
                         if troncon_info['depart'] == arret_changement or start_printing:
                             if not start_printing:
                                 print(f"\033[1m Changement d'arrêt : {arret_changement}, Ligne {chemin_info['ligne_libelle']} \033[0m")
+                                map_widget.set_marker(troncon_info['geoshape'][0][0], troncon_info['geoshape'][0][1],data=arret_changement, command=arret_tram)
                             start_printing = True
+                            map_widget.set_path(troncon_info['geoshape'], color=colors[chemin_info['ligne_libelle'][0]], data=chemin_info['ligne_libelle'][0], command=ligne_tram)
                             print(f"Départ {troncon_info['depart']} -> Arrivée {troncon_info['arrivee']}")
                         if troncon_gid in arrivee_stop_troncons and start_printing:
+                            map_widget.set_marker(troncon_info['geoshape'][-1][0], troncon_info['geoshape'][-1][1], data=troncon_info['arrivee'], command=arret_tram)
                             break
         if troncon_gid in arrivee_stop_troncons:
             break
 
-
-root_tk = tkinter.Tk()
-root_tk.geometry(f"{1000}x{1000}")
-map_widget = tkintermapview.TkinterMapView(root_tk, width=900, height=900, corner_radius=5);
-map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 map_widget.set_position(44.86596236872216, -0.5757273765736807)
 map_widget.set_zoom(18)
 root_tk.mainloop()
